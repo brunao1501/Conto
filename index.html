@@ -46,8 +46,9 @@ button{font:inherit;color:inherit;border:none;background:none;cursor:pointer}
 /* ===== TOPO ===== */
 .top{display:flex;align-items:center;justify-content:space-between}
 .brand{font-size:26px;font-weight:800;letter-spacing:-1px}.brand span{color:var(--lime)}
-.icons{display:flex;gap:8px}
-.ib{width:42px;height:42px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+.icons{display:flex;gap:6px}
+.ib.ai{background:linear-gradient(135deg,#7c6cff,#ff4fa3)}
+.ib{width:40px;height:40px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
 .badge{position:absolute;top:-4px;right:-4px;background:var(--pink);color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 
 /* ===== BOLHA (valor restante) ===== */
@@ -140,6 +141,17 @@ li.it .p{font-weight:800}
 .cat.warn b{color:var(--orange)}.cat.over b{color:var(--red)}
 .sec-t{font-size:13px;color:var(--mut);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px}
 .cmp{font-size:12px;margin-top:2px}.cmp.down{color:var(--lime)}.cmp.up{color:var(--orange)}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;margin-bottom:10px}
+.msg{padding:10px 12px;border-radius:16px;font-size:15px;line-height:1.4;max-width:88%;white-space:pre-wrap}
+.msg.u{align-self:flex-end;background:var(--lime);color:#0d0b1e;border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--bg);border-bottom-left-radius:4px}
+.msg.a.typing{color:var(--mut)}
+.sug{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;scrollbar-width:none}
+.sug button{flex:0 0 auto;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px}
+.askrow{display:flex;gap:8px}.askrow input{flex:1;min-width:0;background:var(--bg);border:2px solid var(--line);border-radius:14px;color:var(--txt);font:inherit;font-size:16px;padding:12px;outline:none}
+.askrow button{background:var(--lime);color:#0d0b1e;border-radius:14px;padding:0 16px;font-weight:800}
+.nota{font-size:12px;color:var(--mut);margin-top:8px;text-align:center}
+.hint{color:var(--mut)}
 </style>
 </head>
 <body>
@@ -166,6 +178,7 @@ li.it .p{font-weight:800}
   <div class="top">
     <div class="brand disp"><svg viewBox="40 100 420 350" width="34" height="28" style="vertical-align:-3px;margin-right:6px"><path d="M70 150h52l42 200h230l40-150" fill="none" stroke="#f4f2ff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><circle cx="190" cy="410" r="32" fill="#c6ff3d"/><circle cx="370" cy="410" r="32" fill="#c6ff3d"/><circle cx="285" cy="262" r="62" fill="none" stroke="#c6ff3d" stroke-width="34"/><path d="M245 165l40-38 40 38" fill="none" stroke="#c6ff3d" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/></svg>Cont<span>ô</span></div>
     <div class="icons">
+      <button class="ib ai" id="bAI" aria-label="Assistente">✨</button>
       <button class="ib" id="bLimites" aria-label="Limites">⚙️</button>
       <button class="ib" id="bListas" aria-label="Listas">📝</button>
       <button class="ib" id="bHist" aria-label="Histórico">📊</button>
@@ -224,13 +237,22 @@ const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 const PAY={D:'💵 Dinheiro/Pix',C:'💳 Cartão'};
 
 const CATS={A:'🍞 Comida',L:'🧽 Limpeza',H:'🧴 Higiene',O:'📦 Outros'};
-let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{},cats:{A:'',L:'',H:'',O:''},cat:'A'};
+let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{},cats:{A:'',L:'',H:'',O:''},cat:'A',precos:{},chat:[]};
 try{Object.assign(st,JSON.parse(localStorage.getItem('contoApp'))||JSON.parse(localStorage.getItem('cabeApp'))||JSON.parse(localStorage.getItem('limiteMercado2'))||{})}catch(e){}
+st.precos=st.precos||{};st.chat=st.chat||[];
 st.cats=Object.assign({A:'',L:'',H:'',O:''},st.cats||{});if(!st.cat)st.cat='A';
 const save=()=>{try{localStorage.setItem('contoApp',JSON.stringify(st))}catch(e){}};
 const fmtM=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
 function mascara(root){root.querySelectorAll('input[data-m]').forEach(el=>{el.value=fmtM(num(el.value));
   el.oninput=()=>{const d=el.value.replace(/\D/g,'').replace(/^0+/,'').slice(0,9);el.value=d?fmtM(parseInt(d)/100):''}})}
+const htot=h=>(h.D||0)+(h.C||0)+(h.O||0);
+const norm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function regPreco(nome,v,loja,d){const k=norm(nome);if(!k||!(v>0))return;const a=st.precos[k]||(st.precos[k]=[]);a.unshift({n:nome,v:+v.toFixed(2),l:loja||'',d:d||Date.now()});if(a.length>8)a.length=8;
+  const ks=Object.keys(st.precos);if(ks.length>600){ks.sort((x,y)=>st.precos[x][0].d-st.precos[y][0].d).slice(0,ks.length-600).forEach(x=>delete st.precos[x])}}
+function achaPreco(nome){const k=norm(nome);if(k.length<3)return null;if(st.precos[k])return st.precos[k];
+  const w=k.split(' ').filter(x=>x.length>2);let best=null,bs=0;
+  for(const [kk,a] of Object.entries(st.precos)){const sc=w.filter(x=>kk.includes(x)).length/w.length;if(sc>bs&&sc>=.6){bs=sc;best=a}}return best}
+const dd=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
 const famOn=()=>Object.values(st.cats).some(v=>num(v)>0);
 function totCat(){const t={A:0,L:0,H:0,O:0};st.itens.forEach(i=>{if(i.c)t[i.c]+=i.v*i.q});return t}
 function compartilhar(titulo,linhas){
@@ -288,6 +310,8 @@ function render(){
     else msg=cabem>0?`Ainda cabem uns <b>${cabem}</b> itens no seu preço médio (${brl(med)})`:`Só cabe algo até <b>${brl(rest)}</b>`}
   if(entrada){const v=num(entrada)/100*qtd;msg=v<=rest?`Esse item <b>cabe</b> — sobra ${brl(rest-v)} ✅`:`Esse item <b style="color:#ff4d4d">não cabe</b> — passa ${brl(v-rest)} ❌`;
     if(famOn()&&v<=rest){const lc=num(st.cats[st.cat]);if(lc>0){const rc=lc-totCat()[st.cat];if(v>rc)msg=`Cabe no total, mas <b style="color:#ffab2e">estoura ${CATS[st.cat]}</b> em ${brl(v-rc)} ⚠️`}}}
+  const nm=$('nome').value.trim();if(nm){const hp=achaPreco(nm);if(hp){const mn=hp.reduce((a,x)=>x.v<a.v?x:a,hp[0]);
+    msg+=`<div class="hint" style="font-size:12px;margin-top:4px">🧾 Última vez: <b>${brl(hp[0].v)}</b>${hp[0].l?' no '+esc(hp[0].l):''} (${dd(hp[0].d)})${mn!==hp[0]?` · menor: ${brl(mn.v)}${mn.l?' no '+esc(mn.l):''}`:''}</div>`}}
   $('cabe').innerHTML=msg;
 
   ['D','C'].forEach(p=>{const r=lim[p]-t[p];
@@ -320,6 +344,7 @@ $('keys').onclick=e=>{const b=e.target.closest('button');if(!b||b.id==='go')retu
   else if(k==='cam'){$('foto').click();return}
   else if(entrada.length<8)entrada=(entrada+k).replace(/^0+/,'');
   render()};
+$('nome').addEventListener('input',()=>{clearTimeout(window._nt);window._nt=setTimeout(render,250)});
 $('qm').onclick=()=>{qtd=Math.max(1,qtd-1);render()};
 $('qp').onclick=()=>{qtd++;render()};
 document.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{st.pay=b.dataset.p;buzz(10);render()});
@@ -364,10 +389,10 @@ function abrirCarrinho(){const t=totais();
       compartilhar('Carrinho — '+brl(t.D+t.C),st.itens.map(i=>`• ${i.n||'Produto'}${i.q>1?' ('+i.q+'x)':''} — ${brl(i.v*i.q)}`))};
     $('lp').onclick=()=>{if(!st.itens.length)return;st.itens=[];st.avisos={};fechar()};
     $('fin').onclick=()=>{if(!st.itens.length)return;const t=totais(),lim=num(st.limD)+num(st.limC);
-      const ant=st.hist[0],tot=t.D+t.C;
+      const ant=st.hist[0],tot=t.D+t.C;st.itens.forEach(i=>{if(i.n)regPreco(i.n,i.v,'',Date.now())});
       st.hist.unshift({d:Date.now(),D:t.D,C:t.C,n:st.itens.reduce((a,i)=>a+i.q,0)});
       const dentro=lim<=0||tot<=lim;st.itens=[];st.avisos={};st.ativa=null;fechar();
-      let cmp='';if(ant){const d=tot-(ant.D+ant.C);cmp=Math.abs(d)<0.01?' Igual à última compra.':d<0?` ${brl(-d)} a menos que a última! 📉`:` ${brl(d)} a mais que a última.`}
+      let cmp='';if(ant){const d=tot-htot(ant);cmp=Math.abs(d)<0.01?' Igual à última compra.':d<0?` ${brl(-d)} a menos que a última! 📉`:` ${brl(d)} a mais que a última.`}
       if(dentro){confete();toast('Dentro do limite! 🎉'+cmp)}else toast('Compra salva.'+cmp,'#ffab2e')}})}
 $('bCarr').onclick=abrirCarrinho;
 
@@ -392,14 +417,15 @@ function abrirListas(){
 $('bListas').onclick=abrirListas;
 
 function abrirHist(){const now=new Date();
-  const mes=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).reduce((a,h)=>a+h.D+h.C,0);
+  const mes=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).reduce((a,h)=>a+htot(h),0);
   const pm=new Date(now.getFullYear(),now.getMonth()-1,1);
-  const mesAnt=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===pm.getMonth()&&d.getFullYear()===pm.getFullYear()}).reduce((a,h)=>a+h.D+h.C,0);
+  const mesAnt=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===pm.getMonth()&&d.getFullYear()===pm.getFullYear()}).reduce((a,h)=>a+htot(h),0);
   const dm=mes-mesAnt;
-  abrir(head('Histórico')+`<div class="kpi"><span style="color:var(--mut);font-size:12px">GASTO NESTE MÊS</span><b class="disp">${brl(mes)}</b>${mesAnt?`<div class="cmp ${dm<=0?'down':'up'}">${dm<=0?'▼ '+brl(-dm)+' a menos':'▲ '+brl(dm)+' a mais'} que o mês passado</div>`:''}</div><ul id="lh"></ul>`,()=>{
+  abrir(head('Histórico')+`<div class="kpi"><span style="color:var(--mut);font-size:12px">GASTO NESTE MÊS</span><b class="disp">${brl(mes)}</b>${mesAnt?`<div class="cmp ${dm<=0?'down':'up'}">${dm<=0?'▼ '+brl(-dm)+' a menos':'▲ '+brl(dm)+' a mais'} que o mês passado</div>`:''}</div><button class="btn" id="bCup" style="margin-bottom:10px">🧾 Ler cupom fiscal (QR code)</button><ul id="lh"></ul>`,()=>{
+    $('bCup').onclick=abrirCupom;
     const ul=$('lh');ul.innerHTML=st.hist.length?'':'<li class="empty">Nenhuma compra finalizada</li>';
     st.hist.forEach((h,i)=>{const li=document.createElement('li');li.className='it';
-      li.innerHTML=`<div class="grow"><div class="t">${new Date(h.d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} · ${h.n} ${h.n===1?'item':'itens'}</div><div class="s">💵 ${brl(h.D)} · 💳 ${brl(h.C)}</div>${(()=>{const a=st.hist[i+1];if(!a)return'';const d=h.D+h.C-a.D-a.C;return Math.abs(d)<0.01?'':`<div class="cmp ${d<0?'down':'up'}">${d<0?'▼ '+brl(-d)+' a menos':'▲ '+brl(d)+' a mais'} que a anterior</div>`})()}</div><div class="p">${brl(h.D+h.C)}</div>`;
+      li.innerHTML=`<div class="grow"><div class="t">${new Date(h.d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} · ${h.n} ${h.n===1?'item':'itens'}</div><div class="s">${h.loja?'🧾 '+esc(h.loja):`💵 ${brl(h.D)} · 💳 ${brl(h.C)}`}</div>${(()=>{const a=st.hist[i+1];if(!a)return'';const d=htot(h)-htot(a);return Math.abs(d)<0.01?'':`<div class="cmp ${d<0?'down':'up'}">${d<0?'▼ '+brl(-d)+' a menos':'▲ '+brl(d)+' a mais'} que a anterior</div>`})()}</div><div class="p">${brl(htot(h))}</div>`;
       const d=document.createElement('button');d.className='sm del';d.textContent='✕';d.onclick=()=>{st.hist.splice(i,1);save();abrirHist()};li.append(d);ul.append(li)})})}
 $('bHist').onclick=abrirHist;
 
@@ -414,6 +440,76 @@ $('foto').onchange=async e=>{const f=e.target.files[0];if(!f)return;e.target.val
     $('ocr').textContent='Toque no preço certo:';
     ach.forEach(v=>{const b=document.createElement('button');b.textContent=brl(v);b.onclick=()=>{entrada=String(Math.round(v*100));fechar()};$('oc').append(b)});
   }catch(err){$('ocr').textContent='Leitura indisponível aqui. Digite o valor no teclado.'}};
+
+/* ---------- CUPOM FISCAL (NFC-e) ---------- */
+let jsqrP;
+const loadQR=()=>jsqrP||(jsqrP=new Promise((ok,err)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';s.onload=ok;s.onerror=err;document.head.append(s)}));
+function abrirCupom(){
+  abrir(head('🧾 Cupom fiscal')+`<div style="font-size:14px;color:var(--mut);margin-bottom:12px">Tire uma foto do <b style="color:var(--txt)">QR code</b> do cupom. O Contô busca os produtos e preços direto na Sefaz e guarda no seu histórico de preços.</div>
+  <button class="btn" id="cqFoto">📷 Fotografar QR code</button>
+  <input type="file" id="cqIn" accept="image/*" capture="environment" hidden>
+  <div class="field" style="margin-top:12px"><label>…ou cole o link do QR code</label><input id="cqUrl" placeholder="https://www.nfce.fazenda.sp.gov.br/..."></div>
+  <button class="btn alt" id="cqGo">Buscar cupom</button><div id="cqRes" class="empty" style="padding:12px 0"></div>`,()=>{
+    $('cqFoto').onclick=()=>$('cqIn').click();
+    $('cqGo').onclick=()=>buscarNota($('cqUrl').value);
+    $('cqIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;e.target.value='';$('cqRes').textContent='🔍 Lendo QR code…';
+      try{await loadQR();const img=await createImageBitmap(f);let link=null;
+        for(const m of [1600,1000,700]){const sc=Math.min(1,m/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*sc|0;c.height=img.height*sc|0;
+          const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);const q=jsQR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height);if(q&&q.data){link=q.data;break}}
+        if(!link){$('cqRes').textContent='Não achei o QR code 😕 Tente uma foto mais de perto e com boa luz.';return}
+        $('cqUrl').value=link;buscarNota(link)}catch(err){$('cqRes').textContent='Não consegui ler a foto. Cole o link do QR code.'}};
+  })}
+async function buscarNota(link){
+  if(!link){toast('Cole o link ou fotografe o QR','#ffab2e');return}
+  $('cqRes').textContent='⏳ Buscando na Sefaz…';
+  try{const r=await fetch('/api/nfce',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:link})});
+    const n=await r.json();if(!r.ok){$('cqRes').textContent=n.erro||'Erro ao buscar o cupom';return}
+    mostrarNota(n)}catch(e){$('cqRes').textContent='Sem conexão com o servidor. Tente de novo.'}}
+function mostrarNota(n){
+  const loja=(n.loja||'Mercado').replace(/\s+(LTDA|S\/?A|EIRELI|ME|EPP)\.?$/i,'').trim();
+  const [d,m,y]=(n.data||'').split('/');const ts=y?new Date(+y,m-1,+d,12).getTime():Date.now();
+  abrir(head('🧾 '+esc(loja))+`<div class="kpi"><span style="color:var(--mut);font-size:12px">${n.data||''} · ${n.itens.length} produtos</span><b class="disp">${brl(n.total)}</b></div><ul id="nl2"></ul>
+  <button class="btn" id="nSalva" style="margin-top:12px">Salvar preços e compra</button><button class="btn alt" id="nSoP" style="margin-top:8px">Salvar só os preços</button>`,()=>{
+    const ul=$('nl2');n.itens.forEach(i=>{const old=achaPreco(i.nome);const li=document.createElement('li');li.className='it';
+      let cmp='';if(old){const df=i.unit-old[0].v;if(Math.abs(df)>=0.01)cmp=`<div class="cmp ${df<0?'down':'up'}">${df<0?'▼':'▲'} ${brl(Math.abs(df))} vs ${dd(old[0].d)}</div>`}
+      li.innerHTML=`<div class="grow"><div class="t">${esc(i.nome)}</div><div class="s">${i.qtd} ${esc(i.un||'')} × ${brl(i.unit)}</div>${cmp}</div><div class="p">${brl(i.total)}</div>`;ul.append(li)});
+    const salvar=compra=>{n.itens.forEach(i=>regPreco(i.nome,i.unit,loja,ts));
+      if(compra)st.hist.unshift({d:ts,D:0,C:0,O:n.total,n:n.itens.reduce((a,i)=>a+(i.un&&/kg|g|l/i.test(i.un)?1:i.qtd),0),loja});
+      st.hist.sort((a,b)=>b.d-a.d);save();fechar();toast(`🧾 ${n.itens.length} preços salvos!`)};
+    $('nSalva').onclick=()=>salvar(true);$('nSoP').onclick=()=>salvar(false)})}
+
+/* ---------- ASSISTENTE DE IA ---------- */
+function contexto(){const t=totais(),lim=num(st.limD)+num(st.limC);
+  const L=st.listas.find(l=>l.id===st.ativa);
+  const pr=Object.values(st.precos).sort((a,b)=>b[0].d-a[0].d).slice(0,120).map(a=>{const mn=a.reduce((x,y)=>y.v<x.v?y:x,a[0]);return `${a[0].n}: último ${brl(a[0].v)}${a[0].l?' ('+a[0].l+', '+dd(a[0].d)+')':''}${mn!==a[0]?`; menor ${brl(mn.v)}${mn.l?' ('+mn.l+')':''}`:''}`});
+  return [`Data: ${new Date().toLocaleDateString('pt-BR')}`,
+    `Limites: Dinheiro/Pix ${num(st.limD)?brl(num(st.limD)):'não definido'}; Cartão ${num(st.limC)?brl(num(st.limC)):'não definido'}${famOn()?'; Categorias: '+Object.keys(CATS).filter(k=>num(st.cats[k])).map(k=>CATS[k]+' '+brl(num(st.cats[k]))).join(', '):''}`,
+    `Carrinho (total ${brl(t.D+t.C)}${lim?', resta '+brl(lim-t.D-t.C):''}):`, ...(st.itens.length?st.itens.map(i=>`- ${i.n||'Produto sem nome'} ${i.q}x ${brl(i.v)} = ${brl(i.v*i.q)} (${i.p==='D'?'dinheiro/pix':'cartão'}${i.c?', '+CATS[i.c]:''})`):['- vazio']),
+    L?`Lista ativa "${L.nome}": ${L.itens.map(x=>x.n+(x.v?' ~'+brl(x.v):'')).join('; ')}`:'Sem lista ativa',
+    `Listas salvas: ${st.listas.map(l=>l.nome).join(', ')||'nenhuma'}`,
+    `Últimas compras: ${st.hist.slice(0,5).map(h=>dd(h.d)+' '+brl(htot(h))+(h.loja?' '+h.loja:'')).join('; ')||'nenhuma'}`,
+    `Histórico de preços da pessoa (${pr.length} produtos):`, ...(pr.length?pr:['- vazio (ainda não leu cupons)'])].join('\n')}
+function abrirAI(){
+  abrir(head('✨ Assistente Contô')+`<div class="chat" id="chat"></div>
+  <div class="sug" id="sug"><button>O que tirar pra caber no limite?</button><button>Onde paguei mais barato?</button><button>Organize minha lista por corredor</button><button>Quanto vou gastar com a lista?</button></div>
+  <form class="askrow" id="askF"><input id="ask" placeholder="Pergunte algo…" autocomplete="off"><button>➤</button></form>
+  <div class="nota">A IA usa só os seus dados e preços dos seus cupons. <button id="chClr" style="text-decoration:underline;color:var(--mut);font-size:12px">limpar conversa</button></div>`,()=>{
+    pintaChat();
+    $('sug').onclick=e=>{const b=e.target.closest('button');if(b)perguntar(b.textContent)};
+    $('askF').onsubmit=e=>{e.preventDefault();perguntar($('ask').value)};
+    $('chClr').onclick=()=>{st.chat=[];save();pintaChat()};
+  })}
+function pintaChat(extra){const c=$('chat');if(!c)return;
+  c.innerHTML=(st.chat.length?'':'<div class="msg a">Oi! 👋 Sou a assistente do Contô. Posso ajudar a caber no limite, organizar sua lista e comparar os preços dos seus cupons.</div>')+
+    st.chat.map(m=>`<div class="msg ${m.role==='user'?'u':'a'}">${esc(m.content).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}</div>`).join('')+(extra||'');c.scrollTop=c.scrollHeight}
+let pensando=false;
+async function perguntar(q){q=String(q||'').trim();if(!q||pensando)return;$('ask').value='';pensando=true;
+  st.chat.push({role:'user',content:q});pintaChat('<div class="msg a typing">digitando…</div>');
+  try{const r=await fetch('/api/assistente',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mensagens:st.chat.slice(-10),contexto:contexto()})});
+    const d=await r.json();st.chat.push({role:'assistant',content:r.ok?(d.resposta||'…'):'😕 '+(d.erro||'Não consegui responder agora.')})}
+  catch(e){st.chat.push({role:'assistant',content:'😕 Sem conexão. A assistente precisa de internet.'})}
+  if(st.chat.length>30)st.chat=st.chat.slice(-30);pensando=false;save();pintaChat()}
+$('bAI').onclick=abrirAI;
 
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!location.hostname.includes('claude')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 render();

@@ -21,3 +21,7 @@ Abra o link → menu do navegador → **Adicionar à tela inicial**.
 
 ## Tecnologia
 HTML, CSS e JavaScript puros, sem build. Deploy automático na Vercel a cada push na branch `main`.
+
+## Assistente de IA e cupom fiscal
+- `api/assistente.js` — assistente via Vercel AI Gateway (Claude Haiku 5.5). Usa só os dados do usuário; não inventa preços.
+- `api/nfce.js` — lê o link do QR code da NFC-e e busca produtos/preços na consulta pública da Sefaz (função na região São Paulo, `gru1`).
