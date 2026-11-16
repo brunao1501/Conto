@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0b1e;--card:#1a1733;--line:#2a2650;--lime:#c6ff3d;--pink:#ff4fa3;--orange:#ffab2e;--red:#ff4d4d;--txt:#f4f2ff;--mut:#9a95c4;--liq:var(--lime)}
+[hidden]{display:none!important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;overflow:hidden}
 .disp{font-family:'Bricolage Grotesque',system-ui,sans-serif}
@@ -130,6 +131,13 @@ li.it .p{font-weight:800}
 #toast{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translate(-50%,-160%);z-index:60;padding:12px 18px;border-radius:16px;font-weight:700;color:#0d0b1e;transition:transform .35s cubic-bezier(.3,1.5,.5,1);max-width:90%;text-align:center}
 #toast.show{transform:translate(-50%,0)}
 .confetti{position:fixed;z-index:70;width:9px;height:14px;pointer-events:none;top:-20px}
+.cats{display:flex;gap:6px;overflow-x:auto;padding:0 2px 10px;scrollbar-width:none}
+.cat{flex:0 0 auto;background:var(--bg);border-radius:12px;padding:6px 10px;font-size:12px;color:var(--mut);border:2px solid transparent;text-align:left}
+.cat b{display:block;font-size:13px;color:var(--txt)}
+.cat.on{border-color:var(--lime)}
+.cat.warn b{color:var(--orange)}.cat.over b{color:var(--red)}
+.sec-t{font-size:13px;color:var(--mut);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px}
+.cmp{font-size:12px;margin-top:2px}.cmp.down{color:var(--lime)}.cmp.up{color:var(--orange)}
 </style>
 </head>
 <body>
@@ -188,6 +196,7 @@ li.it .p{font-weight:800}
       <input id="nome" placeholder="nome do produto (opcional)" maxlength="40">
       <div class="qty"><button id="qm">−</button><span id="qv">1</span><button id="qp">+</button></div>
     </div>
+    <div class="cats" id="cats" hidden></div>
     <div class="entry" style="padding-top:0"><div class="amt disp" id="amt"><small>R$</small> 0,00</div></div>
     <div class="keys" id="keys">
       <button class="k">1</button><button class="k">2</button><button class="k">3</button><button class="k fn" data-k="del">⌫</button>
@@ -212,9 +221,18 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 const PAY={D:'💵 Dinheiro/Pix',C:'💳 Cartão'};
 
-let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{}};
+const CATS={A:'🍞 Comida',L:'🧽 Limpeza',H:'🧴 Higiene',O:'📦 Outros'};
+let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{},cats:{A:'',L:'',H:'',O:''},cat:'A'};
 try{Object.assign(st,JSON.parse(localStorage.getItem('contoApp'))||JSON.parse(localStorage.getItem('cabeApp'))||JSON.parse(localStorage.getItem('limiteMercado2'))||{})}catch(e){}
+st.cats=Object.assign({A:'',L:'',H:'',O:''},st.cats||{});if(!st.cat)st.cat='A';
 const save=()=>{try{localStorage.setItem('contoApp',JSON.stringify(st))}catch(e){}};
+const famOn=()=>Object.values(st.cats).some(v=>num(v)>0);
+function totCat(){const t={A:0,L:0,H:0,O:0};st.itens.forEach(i=>{if(i.c)t[i.c]+=i.v*i.q});return t}
+function compartilhar(titulo,linhas){
+  const txt=`🛒 *${titulo}*\n\n${linhas.join('\n')}\n\n_Feito com Contô — conto-bgtech.vercel.app_`;
+  if(navigator.share){navigator.share({text:txt}).catch(()=>{});return}
+  const a=document.createElement('a');a.href='https://wa.me/?text='+encodeURIComponent(txt);a.target='_blank';a.rel='noopener';document.body.append(a);a.click();a.remove();
+}
 
 /* ---------- SPLASH ---------- */
 (()=>{const sp=$('splash');
@@ -234,9 +252,9 @@ function confete(){for(let i=0;i<40;i++){const c=document.createElement('i');c.c
 
 /* ---------- CÁLCULOS ---------- */
 function totais(){const t={D:0,C:0};st.itens.forEach(i=>t[i.p]+=i.v*i.q);return t}
-function checarAvisos(p,pct){const k=st.avisos[p]||0;let n=pct>100?2:pct>=80?1:0;
-  if(n>k){if(n===2){toast(`${PAY[p]}: estourou o limite! 😬`,'#ff4d4d');buzz([200,100,200,100,300]);$('blob').classList.remove('shake');void $('blob').offsetWidth;$('blob').classList.add('shake')}
-    else{toast(`${PAY[p]}: já foi ${Math.round(pct)}% 👀`,'#ffab2e');buzz(150)}}
+function checarAvisos(p,pct,nome=PAY[p]){const k=st.avisos[p]||0;let n=pct>100?2:pct>=80?1:0;
+  if(n>k){if(n===2){toast(`${nome}: estourou o limite! 😬`,'#ff4d4d');buzz([200,100,200,100,300]);$('blob').classList.remove('shake');void $('blob').offsetWidth;$('blob').classList.add('shake')}
+    else{toast(`${nome}: já foi ${Math.round(pct)}% 👀`,'#ffab2e');buzz(150)}}
   st.avisos[p]=n}
 
 /* ---------- RENDER ---------- */
@@ -263,7 +281,8 @@ function render(){
     if(L){const falta=L.itens.filter(x=>!pegos().has(x.n.toLowerCase()));const est=falta.reduce((a,x)=>a+(x.v||med),0);
       msg=falta.length?(est<=rest?`Os <b>${falta.length}</b> itens que faltam (~${brl(est)}) <b>cabem</b> ✅`:`Faltam ${falta.length} itens (~${brl(est)}) — <b style="color:#ffab2e">pode não caber</b>`):'Lista completa! 🎉'}
     else msg=cabem>0?`Ainda cabem uns <b>${cabem}</b> itens no seu preço médio (${brl(med)})`:`Só cabe algo até <b>${brl(rest)}</b>`}
-  if(entrada){const v=num(entrada)/100*qtd;msg=v<=rest?`Esse item <b>cabe</b> — sobra ${brl(rest-v)} ✅`:`Esse item <b style="color:#ff4d4d">não cabe</b> — passa ${brl(v-rest)} ❌`}
+  if(entrada){const v=num(entrada)/100*qtd;msg=v<=rest?`Esse item <b>cabe</b> — sobra ${brl(rest-v)} ✅`:`Esse item <b style="color:#ff4d4d">não cabe</b> — passa ${brl(v-rest)} ❌`;
+    if(famOn()&&v<=rest){const lc=num(st.cats[st.cat]);if(lc>0){const rc=lc-totCat()[st.cat];if(v>rc)msg=`Cabe no total, mas <b style="color:#ffab2e">estoura ${CATS[st.cat]}</b> em ${brl(v-rc)} ⚠️`}}}
   $('cabe').innerHTML=msg;
 
   ['D','C'].forEach(p=>{const r=lim[p]-t[p];
@@ -272,6 +291,11 @@ function render(){
     $('m'+p).style.background=pc>=100?'#ff4d4d':pc>=80?'#ffab2e':'#c6ff3d';
     if(lim[p]>0)checarAvisos(p,lim[p]?t[p]/lim[p]*100:0)});
   document.querySelectorAll('.pill').forEach(b=>b.classList.toggle('on',b.dataset.p===st.pay));
+  const fo=famOn(),cr=$('cats');cr.hidden=!fo;
+  if(fo){const tc=totCat();cr.innerHTML='';Object.keys(CATS).forEach(k=>{const lc=num(st.cats[k]),r=lc-tc[k],pc=lc>0?tc[k]/lc*100:0;
+    const b=document.createElement('button');b.className='cat'+(st.cat===k?' on':'')+(lc>0&&pc>100?' over':lc>0&&pc>=80?' warn':'');
+    b.innerHTML=`${CATS[k]}<b>${lc>0?(r<0?'-'+brl(-r):brl(r)):(tc[k]?brl(tc[k]):'livre')}</b>`;
+    b.onclick=()=>{st.cat=k;buzz(10);render()};cr.append(b);if(lc>0)checarAvisos('c'+k,pc,CATS[k])})}
   $('badge').hidden=!n;$('badge').textContent=n;
   $('amt').innerHTML=`<small>R$</small> ${(num(entrada)/100).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
   $('qv').textContent=qtd;
@@ -296,7 +320,7 @@ $('qp').onclick=()=>{qtd++;render()};
 document.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{st.pay=b.dataset.p;buzz(10);render()});
 $('go').onclick=e=>{
   const v=num(entrada)/100;if(v<=0){toast('Digite o valor primeiro 😉','#ffab2e');return}
-  st.itens.push({n:$('nome').value.trim(),v,q:qtd,p:st.pay});
+  st.itens.push({n:$('nome').value.trim(),v,q:qtd,p:st.pay,c:famOn()?st.cat:null});
   // moeda voando até a bolha
   const r1=e.currentTarget.getBoundingClientRect(),r2=$('blob').getBoundingClientRect();
   const c=document.createElement('div');c.className='flycoin';c.style.left=(r1.left+r1.width/2-15)+'px';c.style.top=(r1.top+20)+'px';document.body.append(c);
@@ -316,20 +340,30 @@ const head=t=>`<h2 class="disp">${t}<button class="x">✕</button></h2>`;
 $('bLimites').onclick=()=>abrir(head('Quanto posso gastar?')+`
   <div class="row"><div class="field"><label>💵 Dinheiro/Pix</label><input id="fD" inputmode="decimal" placeholder="0,00" value="${esc(st.limD)}"></div>
   <div class="field"><label>💳 Cartão</label><input id="fC" inputmode="decimal" placeholder="0,00" value="${esc(st.limC)}"></div></div>
-  <button class="btn" id="sv">Salvar limites</button>`,()=>{$('sv').onclick=()=>{st.limD=$('fD').value;st.limC=$('fC').value;st.avisos={};fechar();toast('Limites salvos ✔')}});
+  <div class="sec-t">👨‍👩‍👧 Modo família (opcional)</div>
+  <div style="font-size:13px;color:var(--mut);margin-bottom:10px">Divida o limite por categoria. Deixe em branco para não usar.</div>
+  <div class="row"><div class="field"><label>🍞 Comida</label><input id="cA" inputmode="decimal" placeholder="—" value="${esc(st.cats.A)}"></div>
+  <div class="field"><label>🧽 Limpeza</label><input id="cL" inputmode="decimal" placeholder="—" value="${esc(st.cats.L)}"></div></div>
+  <div class="row"><div class="field"><label>🧴 Higiene</label><input id="cH" inputmode="decimal" placeholder="—" value="${esc(st.cats.H)}"></div>
+  <div class="field"><label>📦 Outros</label><input id="cO" inputmode="decimal" placeholder="—" value="${esc(st.cats.O)}"></div></div>
+  <button class="btn" id="sv">Salvar limites</button>`,()=>{$('sv').onclick=()=>{st.limD=$('fD').value;st.limC=$('fC').value;Object.keys(CATS).forEach(k=>st.cats[k]=$('c'+k).value);st.avisos={};fechar();toast('Limites salvos ✔')}});
 
 function abrirCarrinho(){const t=totais();
   abrir(head('Carrinho')+`<div class="kpi"><span class="s" style="color:var(--mut);font-size:12px">TOTAL</span><b class="disp">${brl(t.D+t.C)}</b><span style="color:var(--mut);font-size:13px">💵 ${brl(t.D)} · 💳 ${brl(t.C)}</span></div>
-  <ul id="lc"></ul><div class="row" style="margin-top:12px"><button class="btn alt" id="lp">Limpar</button><button class="btn" id="fin">Finalizar ✔</button></div>`,()=>{
+  <ul id="lc"></ul><button class="btn alt" id="shc" style="margin-top:12px">📤 Enviar carrinho no WhatsApp</button><div class="row" style="margin-top:8px"><button class="btn alt" id="lp">Limpar</button><button class="btn" id="fin">Finalizar ✔</button></div>`,()=>{
     const ul=$('lc');ul.innerHTML=st.itens.length?'':'<li class="empty">Carrinho vazio. Bora às compras! 🛒</li>';
     st.itens.map((it,i)=>[it,i]).reverse().forEach(([it,i])=>{const li=document.createElement('li');li.className='it';
-      li.innerHTML=`<div class="grow"><div class="t">${esc(it.n||'Produto')}</div><div class="s">${it.p==='D'?'💵':'💳'} ${it.q>1?it.q+' × '+brl(it.v):''}</div></div><div class="p">${brl(it.v*it.q)}</div>`;
+      li.innerHTML=`<div class="grow"><div class="t">${esc(it.n||'Produto')}</div><div class="s">${it.p==='D'?'💵':'💳'}${it.c?' '+CATS[it.c].split(' ')[0]:''} ${it.q>1?it.q+' × '+brl(it.v):''}</div></div><div class="p">${brl(it.v*it.q)}</div>`;
       const b=document.createElement('button');b.className='sm del';b.textContent='✕';b.onclick=()=>{st.itens.splice(i,1);st.avisos={};render();abrirCarrinho()};li.append(b);ul.append(li)});
+    $('shc').onclick=()=>{if(!st.itens.length){toast('Carrinho vazio','#ffab2e');return}const t=totais();
+      compartilhar('Carrinho — '+brl(t.D+t.C),st.itens.map(i=>`• ${i.n||'Produto'}${i.q>1?' ('+i.q+'x)':''} — ${brl(i.v*i.q)}`))};
     $('lp').onclick=()=>{if(!st.itens.length)return;st.itens=[];st.avisos={};fechar()};
     $('fin').onclick=()=>{if(!st.itens.length)return;const t=totais(),lim=num(st.limD)+num(st.limC);
+      const ant=st.hist[0],tot=t.D+t.C;
       st.hist.unshift({d:Date.now(),D:t.D,C:t.C,n:st.itens.reduce((a,i)=>a+i.q,0)});
-      const dentro=lim<=0||t.D+t.C<=lim;st.itens=[];st.avisos={};st.ativa=null;fechar();
-      if(dentro){confete();toast('Compra dentro do limite! 🎉')}else toast('Compra salva no histórico','#ffab2e')}})}
+      const dentro=lim<=0||tot<=lim;st.itens=[];st.avisos={};st.ativa=null;fechar();
+      let cmp='';if(ant){const d=tot-(ant.D+ant.C);cmp=Math.abs(d)<0.01?' Igual à última compra.':d<0?` ${brl(-d)} a menos que a última! 📉`:` ${brl(d)} a mais que a última.`}
+      if(dentro){confete();toast('Dentro do limite! 🎉'+cmp)}else toast('Compra salva.'+cmp,'#ffab2e')}})}
 $('bCarr').onclick=abrirCarrinho;
 
 function abrirListas(){
@@ -343,7 +377,9 @@ function abrirListas(){
       const u=document.createElement('button');u.className='sm lime';u.textContent=st.ativa===l.id?'Fechar':'Usar';
       u.onclick=()=>{st.ativa=st.ativa===l.id?null:l.id;fechar()};
       const d=document.createElement('button');d.className='sm del';d.textContent='✕';d.onclick=()=>{st.listas.splice(i,1);if(st.ativa===l.id)st.ativa=null;render();abrirListas()};
-      li.append(u,d);ul.append(li)});
+      const sh=document.createElement('button');sh.className='sm';sh.textContent='📤';sh.setAttribute('aria-label','Compartilhar');
+      sh.onclick=()=>compartilhar(l.nome,l.itens.map(x=>`☐ ${x.n}${x.v?' (~'+brl(x.v)+')':''}`));
+      li.append(sh,u,d);ul.append(li)});
     $('sl').onclick=()=>{const nome=$('nl').value.trim(),itens=$('il').value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const[a,b]=x.split(';');return{n:a.trim(),v:num(b)}});
       if(!nome||!itens.length){toast('Dê um nome e pelo menos 1 item','#ffab2e');return}st.listas.push({id:Date.now(),nome,itens});render();abrirListas();toast('Lista salva ✔')};
     $('sc').onclick=()=>{if(!st.itens.length){toast('Carrinho vazio','#ffab2e');return}
@@ -352,10 +388,13 @@ $('bListas').onclick=abrirListas;
 
 function abrirHist(){const now=new Date();
   const mes=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).reduce((a,h)=>a+h.D+h.C,0);
-  abrir(head('Histórico')+`<div class="kpi"><span style="color:var(--mut);font-size:12px">GASTO NESTE MÊS</span><b class="disp">${brl(mes)}</b></div><ul id="lh"></ul>`,()=>{
+  const pm=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const mesAnt=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===pm.getMonth()&&d.getFullYear()===pm.getFullYear()}).reduce((a,h)=>a+h.D+h.C,0);
+  const dm=mes-mesAnt;
+  abrir(head('Histórico')+`<div class="kpi"><span style="color:var(--mut);font-size:12px">GASTO NESTE MÊS</span><b class="disp">${brl(mes)}</b>${mesAnt?`<div class="cmp ${dm<=0?'down':'up'}">${dm<=0?'▼ '+brl(-dm)+' a menos':'▲ '+brl(dm)+' a mais'} que o mês passado</div>`:''}</div><ul id="lh"></ul>`,()=>{
     const ul=$('lh');ul.innerHTML=st.hist.length?'':'<li class="empty">Nenhuma compra finalizada</li>';
     st.hist.forEach((h,i)=>{const li=document.createElement('li');li.className='it';
-      li.innerHTML=`<div class="grow"><div class="t">${new Date(h.d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} · ${h.n} itens</div><div class="s">💵 ${brl(h.D)} · 💳 ${brl(h.C)}</div></div><div class="p">${brl(h.D+h.C)}</div>`;
+      li.innerHTML=`<div class="grow"><div class="t">${new Date(h.d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} · ${h.n} ${h.n===1?'item':'itens'}</div><div class="s">💵 ${brl(h.D)} · 💳 ${brl(h.C)}</div>${(()=>{const a=st.hist[i+1];if(!a)return'';const d=h.D+h.C-a.D-a.C;return Math.abs(d)<0.01?'':`<div class="cmp ${d<0?'down':'up'}">${d<0?'▼ '+brl(-d)+' a menos':'▲ '+brl(d)+' a mais'} que a anterior</div>`})()}</div><div class="p">${brl(h.D+h.C)}</div>`;
       const d=document.createElement('button');d.className='sm del';d.textContent='✕';d.onclick=()=>{st.hist.splice(i,1);save();abrirHist()};li.append(d);ul.append(li)})})}
 $('bHist').onclick=abrirHist;
 
