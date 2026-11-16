@@ -227,6 +227,9 @@ let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{},
 try{Object.assign(st,JSON.parse(localStorage.getItem('contoApp'))||JSON.parse(localStorage.getItem('cabeApp'))||JSON.parse(localStorage.getItem('limiteMercado2'))||{})}catch(e){}
 st.cats=Object.assign({A:'',L:'',H:'',O:''},st.cats||{});if(!st.cat)st.cat='A';
 const save=()=>{try{localStorage.setItem('contoApp',JSON.stringify(st))}catch(e){}};
+const fmtM=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+function mascara(root){root.querySelectorAll('input[data-m]').forEach(el=>{el.value=fmtM(num(el.value));
+  el.oninput=()=>{const d=el.value.replace(/\D/g,'').replace(/^0+/,'').slice(0,9);el.value=d?fmtM(parseInt(d)/100):''}})}
 const famOn=()=>Object.values(st.cats).some(v=>num(v)>0);
 function totCat(){const t={A:0,L:0,H:0,O:0};st.itens.forEach(i=>{if(i.c)t[i.c]+=i.v*i.q});return t}
 function compartilhar(titulo,linhas){
@@ -339,15 +342,15 @@ $('sheet').onclick=e=>{if(e.target.id==='sheet')fechar()};
 const head=t=>`<h2 class="disp">${t}<button class="x">✕</button></h2>`;
 
 $('bLimites').onclick=()=>abrir(head('Quanto posso gastar?')+`
-  <div class="row"><div class="field"><label>💵 Dinheiro/Pix</label><input id="fD" inputmode="decimal" placeholder="0,00" value="${esc(st.limD)}"></div>
-  <div class="field"><label>💳 Cartão</label><input id="fC" inputmode="decimal" placeholder="0,00" value="${esc(st.limC)}"></div></div>
+  <div class="row"><div class="field"><label>💵 Dinheiro/Pix</label><input id="fD" inputmode="numeric" data-m placeholder="0,00" value="${esc(st.limD)}"></div>
+  <div class="field"><label>💳 Cartão</label><input id="fC" inputmode="numeric" data-m placeholder="0,00" value="${esc(st.limC)}"></div></div>
   <div class="sec-t">👨‍👩‍👧 Modo família (opcional)</div>
   <div style="font-size:13px;color:var(--mut);margin-bottom:10px">Divida o limite por categoria. Deixe em branco para não usar.</div>
-  <div class="row"><div class="field"><label>🍞 Comida</label><input id="cA" inputmode="decimal" placeholder="—" value="${esc(st.cats.A)}"></div>
-  <div class="field"><label>🧽 Limpeza</label><input id="cL" inputmode="decimal" placeholder="—" value="${esc(st.cats.L)}"></div></div>
-  <div class="row"><div class="field"><label>🧴 Higiene</label><input id="cH" inputmode="decimal" placeholder="—" value="${esc(st.cats.H)}"></div>
-  <div class="field"><label>📦 Outros</label><input id="cO" inputmode="decimal" placeholder="—" value="${esc(st.cats.O)}"></div></div>
-  <button class="btn" id="sv">Salvar limites</button>`,()=>{$('sv').onclick=()=>{st.limD=$('fD').value;st.limC=$('fC').value;Object.keys(CATS).forEach(k=>st.cats[k]=$('c'+k).value);st.avisos={};fechar();toast('Limites salvos ✔')}});
+  <div class="row"><div class="field"><label>🍞 Comida</label><input id="cA" inputmode="numeric" data-m placeholder="—" value="${esc(st.cats.A)}"></div>
+  <div class="field"><label>🧽 Limpeza</label><input id="cL" inputmode="numeric" data-m placeholder="—" value="${esc(st.cats.L)}"></div></div>
+  <div class="row"><div class="field"><label>🧴 Higiene</label><input id="cH" inputmode="numeric" data-m placeholder="—" value="${esc(st.cats.H)}"></div>
+  <div class="field"><label>📦 Outros</label><input id="cO" inputmode="numeric" data-m placeholder="—" value="${esc(st.cats.O)}"></div></div>
+  <button class="btn" id="sv">Salvar limites</button>`,()=>{mascara($('panel'));$('sv').onclick=()=>{st.limD=$('fD').value;st.limC=$('fC').value;Object.keys(CATS).forEach(k=>st.cats[k]=$('c'+k).value);st.avisos={};fechar();toast('Limites salvos ✔')}});
 
 function abrirCarrinho(){const t=totais();
   abrir(head('Carrinho')+`<div class="kpi"><span class="s" style="color:var(--mut);font-size:12px">TOTAL</span><b class="disp">${brl(t.D+t.C)}</b><span style="color:var(--mut);font-size:13px">💵 ${brl(t.D)} · 💳 ${brl(t.C)}</span></div>
