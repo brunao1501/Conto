@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1e">
+<title>Contô — by BGTech Consulting</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0b1e;--card:#1a1733;--line:#2a2650;--lime:#c6ff3d;--pink:#ff4fa3;--orange:#ffab2e;--red:#ff4d4d;--txt:#f4f2ff;--mut:#9a95c4;--liq:var(--lime)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;overflow:hidden}
+.disp{font-family:'Bricolage Grotesque',system-ui,sans-serif}
+button{font:inherit;color:inherit;border:none;background:none;cursor:pointer}
+#app{height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 12px)}
+
+/* ===== SPLASH ===== */
+#splash{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 40%,#2b1d6b,#0d0b1e 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity .5s,transform .5s}
+#splash.out{opacity:0;transform:scale(1.15);pointer-events:none}
+.cartWrap{position:relative;width:180px;height:140px;animation:rollIn 1s cubic-bezier(.3,1.6,.5,1) both}
+.cartWrap svg{width:180px;height:140px}
+.wheel{transform-box:fill-box;transform-origin:center;animation:spin .5s linear 2}
+.coin{position:absolute;width:34px;height:34px;border-radius:50%;background:var(--lime);color:#0d0b1e;font:800 13px 'Bricolage Grotesque';display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #0d0b1e inset;opacity:0}
+.coin.c1{left:40px;animation:drop .55s .9s ease-in forwards}
+.coin.c2{left:78px;background:var(--pink);animation:drop .55s 1.05s ease-in forwards}
+.coin.c3{left:112px;background:var(--orange);animation:drop .55s 1.2s ease-in forwards}
+.logo{font-size:84px;font-weight:800;letter-spacing:-3px;margin-top:10px;opacity:0;animation:pop .6s 1.5s cubic-bezier(.3,1.8,.5,1) forwards}
+.logo span{color:var(--lime);display:inline-block;animation:wiggle .6s 2.1s ease-in-out}
+.by{color:var(--mut);font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:0;animation:fade .5s 1.9s forwards}
+.by b{color:var(--txt)}
+.skip{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 24px);color:var(--mut);font-size:12px;opacity:0;animation:fade .4s 1s forwards}
+.spark{position:absolute;width:8px;height:8px;border-radius:50%;opacity:0;animation:burst 1s 1.6s ease-out forwards}
+@keyframes rollIn{from{transform:translateX(-120vw) rotate(-8deg)}to{transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes drop{0%{opacity:1;top:-260px}80%{top:30px}90%{top:22px}100%{opacity:1;top:28px}}
+@keyframes pop{from{opacity:0;transform:scale(.3) rotate(-10deg)}to{opacity:1;transform:none}}
+@keyframes wiggle{0%,100%{transform:none}25%{transform:rotate(-14deg) scale(1.2)}75%{transform:rotate(10deg)}}
+@keyframes fade{to{opacity:1}}
+@keyframes burst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(.2)}}
+
+/* ===== TOPO ===== */
+.top{display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:26px;font-weight:800;letter-spacing:-1px}.brand span{color:var(--lime)}
+.icons{display:flex;gap:8px}
+.ib{width:42px;height:42px;border-radius:14px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+.badge{position:absolute;top:-4px;right:-4px;background:var(--pink);color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* ===== BOLHA (valor restante) ===== */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;position:relative}
+.blob{position:relative;width:min(68vw,250px);aspect-ratio:1;border-radius:50%;background:var(--card);overflow:hidden;box-shadow:0 0 0 6px var(--line),0 0 60px -10px var(--liq);transition:box-shadow .5s;animation:breathe 4s ease-in-out infinite}
+.blob.shake{animation:shake .5s}
+.liquid{position:absolute;left:0;right:0;bottom:0;height:100%;background:var(--liq);transition:height .9s cubic-bezier(.3,1.4,.5,1),background .5s}
+.wave{position:absolute;left:0;width:200%;height:24px;top:-22px;animation:waveX 3s linear infinite}
+.wave path{fill:var(--liq);transition:fill .5s}
+.wave.w2{opacity:.5;animation-duration:5s;animation-direction:reverse;top:-18px}
+.blobTxt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;mix-blend-mode:difference;color:#fff}
+.lbl{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;opacity:.85}
+.val{font-size:clamp(34px,11vw,46px);font-weight:800;letter-spacing:-1.5px;line-height:1.05}
+.pctTxt{font-size:13px;opacity:.85;margin-top:2px}
+@keyframes breathe{50%{transform:scale(1.02)}}
+@keyframes waveX{to{transform:translateX(-50%)}}
+@keyframes shake{20%,60%{transform:translateX(-10px) rotate(-2deg)}40%,80%{transform:translateX(10px) rotate(2deg)}}
+.flycoin{position:fixed;z-index:20;width:30px;height:30px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 3px var(--bg) inset;pointer-events:none;transition:transform .6s cubic-bezier(.5,-0.4,.6,1),opacity .6s}
+
+/* "o que ainda cabe" */
+.cabe{margin-top:14px;background:var(--card);border-radius:18px;padding:10px 14px;font-size:14px;text-align:center;max-width:320px;min-height:40px}
+.cabe b{color:var(--lime)}
+.pills{display:flex;gap:8px;margin-top:10px;width:100%;max-width:340px}
+.pill{flex:1;background:var(--card);border-radius:16px;padding:8px 10px;font-size:12px;color:var(--mut);border:2px solid transparent;text-align:left}
+.pill b{display:block;color:var(--txt);font-size:15px}
+.pill.on{border-color:var(--lime)}
+.pill .mini{height:4px;background:var(--line);border-radius:2px;margin-top:5px;overflow:hidden}
+.pill .mini i{display:block;height:100%;background:var(--lime);transition:width .6s}
+
+/* ===== TECLADO ===== */
+.pad{background:var(--card);border-radius:26px;padding:12px;margin-top:10px}
+.entry{display:flex;align-items:center;gap:8px;padding:2px 6px 10px}
+.entry input{flex:1;min-width:0;background:none;border:none;color:var(--mut);font:inherit;font-size:15px;outline:none}
+.amt{font-size:30px;font-weight:800;letter-spacing:-1px;white-space:nowrap}
+.amt small{font-size:16px;color:var(--mut);font-weight:500}
+.qty{display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:12px;padding:4px}
+.qty button{width:26px;height:26px;border-radius:8px;background:var(--line);font-weight:700}
+.qty span{min-width:22px;text-align:center;font-weight:600;font-size:14px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.k{height:50px;border-radius:15px;background:var(--bg);font-size:22px;font-weight:600;transition:transform .08s}
+.k:active{transform:scale(.92);background:var(--line)}
+.k.cam{font-size:20px}
+.go{grid-column:4;grid-row:2/span 3;border-radius:15px;background:var(--lime);color:#0d0b1e;font-weight:800;font-size:15px;line-height:1.2;transition:transform .1s}
+.go:active{transform:scale(.95)}
+.k.fn{font-size:18px;color:var(--mut)}
+
+/* ===== PAINÉIS ===== */
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(5,4,15,.6);opacity:0;pointer-events:none;transition:opacity .25s}
+.sheet.on{opacity:1;pointer-events:auto}
+.panel{position:absolute;left:0;right:0;bottom:0;max-width:440px;margin:0 auto;max-height:86%;overflow:auto;background:var(--card);border-radius:28px 28px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(100%);transition:transform .35s cubic-bezier(.3,1.3,.5,1)}
+.sheet.on .panel{transform:none}
+.panel h2{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.x{width:36px;height:36px;border-radius:12px;background:var(--bg);font-size:16px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+.field input,.field textarea{width:100%;background:var(--bg);border:2px solid var(--line);border-radius:14px;color:var(--txt);font:inherit;font-size:17px;padding:12px;outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--lime)}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.btn{width:100%;padding:14px;border-radius:16px;background:var(--lime);color:#0d0b1e;font-weight:800;font-size:16px;margin-top:4px}
+.btn.alt{background:var(--bg);color:var(--txt);font-weight:600}
+.btn.danger{background:#3a1626;color:var(--pink)}
+ul{list-style:none}
+li.it{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+li.it:last-child{border:none}
+li.it .grow{flex:1;min-width:0}
+li.it .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+li.it .s{font-size:12px;color:var(--mut)}
+li.it .p{font-weight:800}
+.sm{padding:7px 11px;border-radius:11px;font-size:13px;font-weight:600;background:var(--bg)}
+.sm.lime{background:var(--lime);color:#0d0b1e}
+.sm.del{color:var(--pink)}
+.empty{color:var(--mut);text-align:center;padding:24px 0;font-size:14px}
+.done .t{text-decoration:line-through;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips button{background:var(--lime);color:#0d0b1e;font-weight:700;padding:10px 14px;border-radius:12px}
+.kpi{background:var(--bg);border-radius:18px;padding:14px;margin-bottom:12px}
+.kpi b{font-size:26px;font-weight:800;display:block}
+.listbar{position:absolute;top:0;left:0;right:0;display:flex;gap:6px;overflow-x:auto;padding:4px 0;scrollbar-width:none}
+.lchip{flex:0 0 auto;background:var(--card);border-radius:12px;padding:6px 10px;font-size:12px}
+.lchip.ok{opacity:.4;text-decoration:line-through}
+
+#toast{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translate(-50%,-160%);z-index:60;padding:12px 18px;border-radius:16px;font-weight:700;color:#0d0b1e;transition:transform .35s cubic-bezier(.3,1.5,.5,1);max-width:90%;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+.confetti{position:fixed;z-index:70;width:9px;height:14px;pointer-events:none;top:-20px}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="cartWrap">
+    <div class="coin c1">R$</div><div class="coin c2">R$</div><div class="coin c3">R$</div>
+    <svg viewBox="0 0 180 140" fill="none">
+      <path d="M8 18h26l18 74h98l16-56H44" stroke="#f4f2ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M50 56h104" stroke="#2a2650" stroke-width="6" stroke-linecap="round"/>
+      <circle class="wheel" cx="66" cy="118" r="12" fill="#c6ff3d" stroke="#0d0b1e" stroke-width="4" stroke-dasharray="6 4"/>
+      <circle class="wheel" cx="136" cy="118" r="12" fill="#c6ff3d" stroke="#0d0b1e" stroke-width="4" stroke-dasharray="6 4"/>
+    </svg>
+  </div>
+  <div class="logo disp">Cont<span>ô</span></div>
+  <div class="by">uma criação <b>BGTech Consulting</b></div>
+  <div class="skip">toque para pular</div>
+</div>
+
+<div id="toast"></div>
+
+<div id="app">
+  <div class="top">
+    <div class="brand disp">Cont<span>ô</span></div>
+    <div class="icons">
+      <button class="ib" id="bLimites" aria-label="Limites">⚙️</button>
+      <button class="ib" id="bListas" aria-label="Listas">📝</button>
+      <button class="ib" id="bHist" aria-label="Histórico">📊</button>
+      <button class="ib" id="bCarr" aria-label="Carrinho">🧺<span class="badge" id="badge" hidden>0</span></button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="listbar" id="listbar"></div>
+    <div class="blob" id="blob">
+      <div class="liquid" id="liquid">
+        <svg class="wave" viewBox="0 0 400 24" preserveAspectRatio="none"><path d="M0 12 Q25 0 50 12 T100 12 T150 12 T200 12 T250 12 T300 12 T350 12 T400 12 V24 H0Z"/></svg>
+        <svg class="wave w2" viewBox="0 0 400 24" preserveAspectRatio="none"><path d="M0 12 Q25 2 50 12 T100 12 T150 12 T200 12 T250 12 T300 12 T350 12 T400 12 V24 H0Z"/></svg>
+      </div>
+      <div class="blobTxt">
+        <div class="lbl" id="lbl">ainda cabe</div>
+        <div class="val disp" id="val">R$ 0</div>
+        <div class="pctTxt" id="pctTxt"></div>
+      </div>
+    </div>
+    <div class="cabe" id="cabe"></div>
+    <div class="pills">
+      <button class="pill" data-p="D"><span>💵 Dinheiro/Pix</span><b id="pD">—</b><div class="mini"><i id="mD"></i></div></button>
+      <button class="pill" data-p="C"><span>💳 Cartão</span><b id="pC">—</b><div class="mini"><i id="mC"></i></div></button>
+    </div>
+  </div>
+
+  <div class="pad">
+    <div class="entry">
+      <input id="nome" placeholder="nome do produto (opcional)" maxlength="40">
+      <div class="qty"><button id="qm">−</button><span id="qv">1</span><button id="qp">+</button></div>
+    </div>
+    <div class="entry" style="padding-top:0"><div class="amt disp" id="amt"><small>R$</small> 0,00</div></div>
+    <div class="keys" id="keys">
+      <button class="k">1</button><button class="k">2</button><button class="k">3</button><button class="k fn" data-k="del">⌫</button>
+      <button class="k">4</button><button class="k">5</button><button class="k">6</button>
+      <button class="go disp" id="go">jogar no<br>carrinho<br>🛒</button>
+      <button class="k">7</button><button class="k">8</button><button class="k">9</button>
+      <button class="k cam" data-k="cam">📷</button><button class="k">0</button><button class="k fn" data-k="00">00</button>
+    </div>
+    <input type="file" id="foto" accept="image/*" capture="environment" hidden>
+  </div>
+</div>
+
+<!-- PAINEL GENÉRICO -->
+<div class="sheet" id="sheet"><div class="panel" id="panel"></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const brl=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const brl0=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:Math.abs(v)>=1000?0:2,minimumFractionDigits:Math.abs(v)>=1000?0:2});
+const num=s=>{s=String(s||'').trim().replace(/\s|R\$/g,'');if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+const PAY={D:'💵 Dinheiro/Pix',C:'💳 Cartão'};
+
+let st={limD:'',limC:'',itens:[],listas:[],hist:[],ativa:null,pay:'C',avisos:{}};
+try{Object.assign(st,JSON.parse(localStorage.getItem('contoApp'))||JSON.parse(localStorage.getItem('cabeApp'))||JSON.parse(localStorage.getItem('limiteMercado2'))||{})}catch(e){}
+const save=()=>{try{localStorage.setItem('contoApp',JSON.stringify(st))}catch(e){}};
+
+/* ---------- SPLASH ---------- */
+(()=>{const sp=$('splash');
+  for(let i=0;i<14;i++){const s=document.createElement('i');s.className='spark';const a=Math.PI*2*i/14,d=110+Math.random()*60;
+    s.style.cssText=`left:50%;top:52%;background:${['#c6ff3d','#ff4fa3','#ffab2e','#7c6cff'][i%4]};--x:${Math.cos(a)*d}px;--y:${Math.sin(a)*d}px`;sp.append(s)}
+  const close=()=>{sp.classList.add('out');setTimeout(()=>sp.remove(),600)};
+  const t=setTimeout(close,3000);sp.onclick=()=>{clearTimeout(t);close()};
+})();
+
+/* ---------- TOAST / CONFETE ---------- */
+let tT;
+function toast(msg,cor='#c6ff3d'){const t=$('toast');t.textContent=msg;t.style.background=cor;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3000)}
+function confete(){for(let i=0;i<40;i++){const c=document.createElement('i');c.className='confetti';
+  c.style.cssText=`left:${Math.random()*100}vw;background:${['#c6ff3d','#ff4fa3','#ffab2e','#7c6cff'][i%4]};transform:rotate(${Math.random()*360}deg)`;
+  document.body.append(c);const dx=(Math.random()-.5)*120,dur=1200+Math.random()*900;
+  c.animate([{transform:c.style.transform},{transform:`translate(${dx}px,${innerHeight+40}px) rotate(${Math.random()*720}deg)`}],{duration:dur,easing:'cubic-bezier(.2,.6,.4,1)'}).onfinish=()=>c.remove()}}
+
+/* ---------- CÁLCULOS ---------- */
+function totais(){const t={D:0,C:0};st.itens.forEach(i=>t[i.p]+=i.v*i.q);return t}
+function checarAvisos(p,pct){const k=st.avisos[p]||0;let n=pct>100?2:pct>=80?1:0;
+  if(n>k){if(n===2){toast(`${PAY[p]}: estourou o limite! 😬`,'#ff4d4d');buzz([200,100,200,100,300]);$('blob').classList.remove('shake');void $('blob').offsetWidth;$('blob').classList.add('shake')}
+    else{toast(`${PAY[p]}: já foi ${Math.round(pct)}% 👀`,'#ffab2e');buzz(150)}}
+  st.avisos[p]=n}
+
+/* ---------- RENDER ---------- */
+let entrada='',qtd=1;
+function render(){
+  const t=totais(),lim={D:num(st.limD),C:num(st.limC)},limT=lim.D+lim.C,tot=t.D+t.C,rest=limT-tot;
+  const pct=limT>0?Math.max(0,Math.min(1,rest/limT)):0;
+  const root=document.documentElement.style;
+  const cor=limT<=0?'#7c6cff':rest<0?'#ff4d4d':pct<.2?'#ffab2e':'#c6ff3d';
+  root.setProperty('--liq',cor);
+  $('liquid').style.height=(limT<=0?35:rest<0?100:Math.max(pct*100,3))+'%';
+  if(limT<=0){$('lbl').textContent='bora começar';$('val').textContent='Defina';$('pctTxt').textContent='seu limite ⚙️'}
+  else if(rest<0){$('lbl').textContent='passou';$('val').textContent=brl0(-rest);$('pctTxt').textContent='do limite 😬'}
+  else{$('lbl').textContent='ainda cabe';$('val').textContent=brl0(rest);$('pctTxt').textContent=`${Math.round(pct*100)}% do limite livre`}
+
+  // o "algo a mais": o que ainda cabe
+  const n=st.itens.reduce((a,i)=>a+i.q,0);
+  let msg='';
+  if(limT<=0)msg='Toque em ⚙️ e diga quanto pode gastar';
+  else if(rest<0)msg=`Tire <b>${brl(-rest)}</b> do carrinho pra voltar ao limite`;
+  else if(n===0)msg=`Cabem <b>${Math.floor(rest/10)}</b> itens de R$ 10 💸`;
+  else{const med=tot/n;const cabem=Math.floor(rest/med);
+    const L=st.listas.find(l=>l.id===st.ativa);
+    if(L){const falta=L.itens.filter(x=>!pegos().has(x.n.toLowerCase()));const est=falta.reduce((a,x)=>a+(x.v||med),0);
+      msg=falta.length?(est<=rest?`Os <b>${falta.length}</b> itens que faltam (~${brl(est)}) <b>cabem</b> ✅`:`Faltam ${falta.length} itens (~${brl(est)}) — <b style="color:#ffab2e">pode não caber</b>`):'Lista completa! 🎉'}
+    else msg=cabem>0?`Ainda cabem uns <b>${cabem}</b> itens no seu preço médio (${brl(med)})`:`Só cabe algo até <b>${brl(rest)}</b>`}
+  if(entrada){const v=num(entrada)/100*qtd;msg=v<=rest?`Esse item <b>cabe</b> — sobra ${brl(rest-v)} ✅`:`Esse item <b style="color:#ff4d4d">não cabe</b> — passa ${brl(v-rest)} ❌`}
+  $('cabe').innerHTML=msg;
+
+  ['D','C'].forEach(p=>{const r=lim[p]-t[p];
+    $('p'+p).textContent=lim[p]>0?(r<0?'-'+brl(-r):brl(r)):(t[p]>0?brl(t[p]):'sem limite');
+    const pc=lim[p]>0?Math.min(100,t[p]/lim[p]*100):0;$('m'+p).style.width=pc+'%';
+    $('m'+p).style.background=pc>=100?'#ff4d4d':pc>=80?'#ffab2e':'#c6ff3d';
+    if(lim[p]>0)checarAvisos(p,lim[p]?t[p]/lim[p]*100:0)});
+  document.querySelectorAll('.pill').forEach(b=>b.classList.toggle('on',b.dataset.p===st.pay));
+  $('badge').hidden=!n;$('badge').textContent=n;
+  $('amt').innerHTML=`<small>R$</small> ${(num(entrada)/100).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+  $('qv').textContent=qtd;
+
+  // lista ativa em chips
+  const L=st.listas.find(l=>l.id===st.ativa),lb=$('listbar');lb.innerHTML='';
+  if(L){const pg=pegos();L.itens.forEach(x=>{const c=document.createElement('button');c.className='lchip'+(pg.has(x.n.toLowerCase())?' ok':'');c.textContent=x.n;
+    c.onclick=()=>{$('nome').value=x.n;if(x.v){entrada=String(Math.round(x.v*100))}render()};lb.append(c)})}
+  save();
+}
+const pegos=()=>new Set(st.itens.map(i=>(i.n||'').toLowerCase()));
+
+/* ---------- TECLADO ---------- */
+$('keys').onclick=e=>{const b=e.target.closest('button');if(!b||b.id==='go')return;buzz(8);
+  const k=b.dataset.k||b.textContent.trim();
+  if(k==='del')entrada=entrada.slice(0,-1);
+  else if(k==='cam'){$('foto').click();return}
+  else if(entrada.length<8)entrada=(entrada+k).replace(/^0+/,'');
+  render()};
+$('qm').onclick=()=>{qtd=Math.max(1,qtd-1);render()};
+$('qp').onclick=()=>{qtd++;render()};
+document.querySelectorAll('.pill').forEach(b=>b.onclick=()=>{st.pay=b.dataset.p;buzz(10);render()});
+$('go').onclick=e=>{
+  const v=num(entrada)/100;if(v<=0){toast('Digite o valor primeiro 😉','#ffab2e');return}
+  st.itens.push({n:$('nome').value.trim(),v,q:qtd,p:st.pay});
+  // moeda voando até a bolha
+  const r1=e.currentTarget.getBoundingClientRect(),r2=$('blob').getBoundingClientRect();
+  const c=document.createElement('div');c.className='flycoin';c.style.left=(r1.left+r1.width/2-15)+'px';c.style.top=(r1.top+20)+'px';document.body.append(c);
+  requestAnimationFrame(()=>{c.style.transform=`translate(${r2.left+r2.width/2-r1.left-r1.width/2}px,${r2.top+r2.height/2-r1.top-20}px) scale(.4)`;c.style.opacity='.2'});
+  setTimeout(()=>c.remove(),650);
+  entrada='';qtd=1;$('nome').value='';buzz(25);setTimeout(render,350);
+};
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||$('sheet').classList.contains('on'))return;
+  if(/^\d$/.test(e.key)){entrada=(entrada+e.key).replace(/^0+/,'');render()}else if(e.key==='Backspace'){entrada=entrada.slice(0,-1);render()}else if(e.key==='Enter')$('go').click()});
+
+/* ---------- PAINÉIS ---------- */
+function abrir(html,bind){$('panel').innerHTML=html;$('sheet').classList.add('on');bind&&bind();$('panel').querySelector('.x')?.addEventListener('click',fechar)}
+function fechar(){$('sheet').classList.remove('on');render()}
+$('sheet').onclick=e=>{if(e.target.id==='sheet')fechar()};
+const head=t=>`<h2 class="disp">${t}<button class="x">✕</button></h2>`;
+
+$('bLimites').onclick=()=>abrir(head('Quanto posso gastar?')+`
+  <div class="row"><div class="field"><label>💵 Dinheiro/Pix</label><input id="fD" inputmode="decimal" placeholder="0,00" value="${esc(st.limD)}"></div>
+  <div class="field"><label>💳 Cartão</label><input id="fC" inputmode="decimal" placeholder="0,00" value="${esc(st.limC)}"></div></div>
+  <button class="btn" id="sv">Salvar limites</button>`,()=>{$('sv').onclick=()=>{st.limD=$('fD').value;st.limC=$('fC').value;st.avisos={};fechar();toast('Limites salvos ✔')}});
+
+function abrirCarrinho(){const t=totais();
+  abrir(head('Carrinho')+`<div class="kpi"><span class="s" style="color:var(--mut);font-size:12px">TOTAL</span><b class="disp">${brl(t.D+t.C)}</b><span style="color:var(--mut);font-size:13px">💵 ${brl(t.D)} · 💳 ${brl(t.C)}</span></div>
+  <ul id="lc"></ul><div class="row" style="margin-top:12px"><button class="btn alt" id="lp">Limpar</button><button class="btn" id="fin">Finalizar ✔</button></div>`,()=>{
+    const ul=$('lc');ul.innerHTML=st.itens.length?'':'<li class="empty">Carrinho vazio. Bora às compras! 🛒</li>';
+    st.itens.map((it,i)=>[it,i]).reverse().forEach(([it,i])=>{const li=document.createElement('li');li.className='it';
+      li.innerHTML=`<div class="grow"><div class="t">${esc(it.n||'Produto')}</div><div class="s">${it.p==='D'?'💵':'💳'} ${it.q>1?it.q+' × '+brl(it.v):''}</div></div><div class="p">${brl(it.v*it.q)}</div>`;
+      const b=document.createElement('button');b.className='sm del';b.textContent='✕';b.onclick=()=>{st.itens.splice(i,1);st.avisos={};render();abrirCarrinho()};li.append(b);ul.append(li)});
+    $('lp').onclick=()=>{if(!st.itens.length)return;st.itens=[];st.avisos={};fechar()};
+    $('fin').onclick=()=>{if(!st.itens.length)return;const t=totais(),lim=num(st.limD)+num(st.limC);
+      st.hist.unshift({d:Date.now(),D:t.D,C:t.C,n:st.itens.reduce((a,i)=>a+i.q,0)});
+      const dentro=lim<=0||t.D+t.C<=lim;st.itens=[];st.avisos={};st.ativa=null;fechar();
+      if(dentro){confete();toast('Compra dentro do limite! 🎉')}else toast('Compra salva no histórico','#ffab2e')}})}
+$('bCarr').onclick=abrirCarrinho;
+
+function abrirListas(){
+  abrir(head('Listas prontas')+`<ul id="ll"></ul>
+  <div style="margin-top:14px" class="field"><label>Nova lista</label><input id="nl" placeholder="Compra do mês"></div>
+  <div class="field"><label>Itens — um por linha (preço opcional após ;)</label><textarea id="il" rows="4" placeholder="Arroz 5kg; 28,90&#10;Feijão; 8,50&#10;Leite"></textarea></div>
+  <button class="btn" id="sl">Salvar lista</button><button class="btn alt" id="sc" style="margin-top:8px">Salvar carrinho atual como lista</button>`,()=>{
+    const ul=$('ll');ul.innerHTML=st.listas.length?'':'<li class="empty">Nenhuma lista ainda</li>';
+    st.listas.forEach((l,i)=>{const est=l.itens.reduce((a,x)=>a+(x.v||0),0);const li=document.createElement('li');li.className='it';
+      li.innerHTML=`<div class="grow"><div class="t">${esc(l.nome)}${st.ativa===l.id?' · ativa':''}</div><div class="s">${l.itens.length} itens${est?' · ~'+brl(est):''}</div></div>`;
+      const u=document.createElement('button');u.className='sm lime';u.textContent=st.ativa===l.id?'Fechar':'Usar';
+      u.onclick=()=>{st.ativa=st.ativa===l.id?null:l.id;fechar()};
+      const d=document.createElement('button');d.className='sm del';d.textContent='✕';d.onclick=()=>{st.listas.splice(i,1);if(st.ativa===l.id)st.ativa=null;render();abrirListas()};
+      li.append(u,d);ul.append(li)});
+    $('sl').onclick=()=>{const nome=$('nl').value.trim(),itens=$('il').value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const[a,b]=x.split(';');return{n:a.trim(),v:num(b)}});
+      if(!nome||!itens.length){toast('Dê um nome e pelo menos 1 item','#ffab2e');return}st.listas.push({id:Date.now(),nome,itens});render();abrirListas();toast('Lista salva ✔')};
+    $('sc').onclick=()=>{if(!st.itens.length){toast('Carrinho vazio','#ffab2e');return}
+      st.listas.push({id:Date.now(),nome:$('nl').value.trim()||'Lista de '+new Date().toLocaleDateString('pt-BR'),itens:st.itens.map(i=>({n:i.n||'Produto',v:i.v}))});render();abrirListas();toast('Lista salva ✔')}})}
+$('bListas').onclick=abrirListas;
+
+function abrirHist(){const now=new Date();
+  const mes=st.hist.filter(h=>{const d=new Date(h.d);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).reduce((a,h)=>a+h.D+h.C,0);
+  abrir(head('Histórico')+`<div class="kpi"><span style="color:var(--mut);font-size:12px">GASTO NESTE MÊS</span><b class="disp">${brl(mes)}</b></div><ul id="lh"></ul>`,()=>{
+    const ul=$('lh');ul.innerHTML=st.hist.length?'':'<li class="empty">Nenhuma compra finalizada</li>';
+    st.hist.forEach((h,i)=>{const li=document.createElement('li');li.className='it';
+      li.innerHTML=`<div class="grow"><div class="t">${new Date(h.d).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} · ${h.n} itens</div><div class="s">💵 ${brl(h.D)} · 💳 ${brl(h.C)}</div></div><div class="p">${brl(h.D+h.C)}</div>`;
+      const d=document.createElement('button');d.className='sm del';d.textContent='✕';d.onclick=()=>{st.hist.splice(i,1);save();abrirHist()};li.append(d);ul.append(li)})})}
+$('bHist').onclick=abrirHist;
+
+/* ---------- CÂMERA (etiqueta) ---------- */
+let tess;
+const loadT=()=>tess||(tess=new Promise((ok,err)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=err;document.head.append(s)}));
+$('foto').onchange=async e=>{const f=e.target.files[0];if(!f)return;e.target.value='';
+  abrir(head('Lendo etiqueta…')+'<div class="empty" id="ocr">🔍 Procurando o preço…</div><div class="chips" id="oc"></div>');
+  try{await loadT();const{data}=await Tesseract.recognize(f,'por');
+    const ach=[...new Set((data.text.match(/\d{1,4}[.,]\d{2}(?!\d)/g)||[]).map(num))].filter(v=>v>0&&v<10000).sort((a,b)=>b-a);
+    if(!ach.length){$('ocr').textContent='Não achei preço 😕 Aproxime da etiqueta ou digite.';return}
+    $('ocr').textContent='Toque no preço certo:';
+    ach.forEach(v=>{const b=document.createElement('button');b.textContent=brl(v);b.onclick=()=>{entrada=String(Math.round(v*100));fechar()};$('oc').append(b)});
+  }catch(err){$('ocr').textContent='Leitura indisponível aqui. Digite o valor no teclado.'}};
+
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!location.hostname.includes('claude')){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+render();
+</script>
+</body>
+</html>
